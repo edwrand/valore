@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git -C /Users/ebbyrandall/Valore log --all --name-status --oneline)",
+      "Bash(npm view:*)",
+      "Bash(npm search:*)"
+    ]
+  }
+}
