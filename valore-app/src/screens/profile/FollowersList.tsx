@@ -10,36 +10,27 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RouteProp } from '@react-navigation/native';
-import { ChevronLeft, Bookmark } from 'lucide-react-native';
+import { ChevronLeft, Users } from 'lucide-react-native';
 import { colors, spacing, fontSize, fontWeight } from '../../styles/theme';
-import HotelCard from '../../components/HotelCard';
-import { useListWithHotels, useRemoveFromList } from '../../hooks/useSaveHotel';
+import UserListItem from '../../components/UserListItem';
+import { useFollowers } from '../../hooks/useFollows';
 import { useResponsiveSpacing } from '../../hooks/useResponsiveSpacing';
 import type { ProfileStackParamList } from '../../navigation/ProfileStack';
-import type { HotelWithDetails } from '../../types/models';
+import type { Profile } from '../../types/db';
 
 type Props = {
-  navigation: NativeStackNavigationProp<ProfileStackParamList, 'ListDetail'>;
-  route: RouteProp<ProfileStackParamList, 'ListDetail'>;
+  navigation: NativeStackNavigationProp<ProfileStackParamList, 'FollowersList'>;
+  route: RouteProp<ProfileStackParamList, 'FollowersList'>;
 };
 
-export default function ListDetailScreen({ navigation, route }: Props) {
-  const { listId } = route.params;
-  const { data: list, isLoading } = useListWithHotels(listId);
-  const removeFromList = useRemoveFromList();
+export default function FollowersListScreen({ navigation, route }: Props) {
+  const { userId } = route.params;
+  const { data: followers, isLoading } = useFollowers(userId);
   const { screenPadding } = useResponsiveSpacing();
 
-  const handleHotelPress = (hotelId: string) => {
-    navigation.navigate('HotelDetail', { hotelId });
-  };
-
-  const handleRemove = (hotelId: string) => {
-    removeFromList.mutate({ hotelId, listId });
-  };
-
-  if (isLoading || !list) {
+  if (isLoading) {
     return (
-      <SafeAreaView style={styles.container}>
+      <SafeAreaView style={styles.container} edges={['top']}>
         <View style={styles.loading}>
           <ActivityIndicator size="large" color={colors.primary} />
         </View>
@@ -47,23 +38,16 @@ export default function ListDetailScreen({ navigation, route }: Props) {
     );
   }
 
-  const renderItem = ({ item }: { item: HotelWithDetails }) => (
-    <View style={styles.cardWrapper}>
-      <HotelCard
-        hotel={item}
-        onPress={() => handleHotelPress(item.id)}
-        onSave={() => handleRemove(item.id)}
-        isSaved={true}
-      />
-    </View>
+  const renderItem = ({ item }: { item: Profile }) => (
+    <UserListItem user={item} showFollowButton={true} />
   );
 
   const renderEmpty = () => (
     <View style={styles.empty}>
-      <Bookmark size={48} color={colors.textTertiary} />
-      <Text style={styles.emptyTitle}>No hotels in this list</Text>
+      <Users size={48} color={colors.textTertiary} />
+      <Text style={styles.emptyTitle}>No followers yet</Text>
       <Text style={styles.emptyText}>
-        Start exploring and save hotels to this list
+        When people follow you, they'll appear here
       </Text>
     </View>
   );
@@ -76,20 +60,19 @@ export default function ListDetailScreen({ navigation, route }: Props) {
           <ChevronLeft size={24} color={colors.textPrimary} />
         </TouchableOpacity>
         <View style={styles.headerContent}>
-          <Text style={styles.title}>{list.name}</Text>
+          <Text style={styles.title}>Followers</Text>
           <Text style={styles.subtitle}>
-            {list.hotels.length} {list.hotels.length === 1 ? 'hotel' : 'hotels'}
+            {followers?.length || 0} {followers?.length === 1 ? 'follower' : 'followers'}
           </Text>
         </View>
         <View style={{ width: 24 }} />
       </View>
 
-      {/* Hotels list */}
+      {/* Followers list */}
       <FlatList
-        data={list.hotels}
+        data={followers}
         renderItem={renderItem}
         keyExtractor={(item) => item.id}
-        contentContainerStyle={[styles.list, { paddingHorizontal: screenPadding }]}
         ListEmptyComponent={renderEmpty}
         showsVerticalScrollIndicator={false}
       />
@@ -127,15 +110,10 @@ const styles = StyleSheet.create({
     fontSize: fontSize.sm,
     color: colors.textSecondary,
   },
-  list: {
-    paddingVertical: spacing.md,
-  },
-  cardWrapper: {
-    marginBottom: spacing.md,
-  },
   empty: {
     alignItems: 'center',
     paddingVertical: spacing.xxl,
+    paddingHorizontal: spacing.lg,
   },
   emptyTitle: {
     fontSize: fontSize.lg,

@@ -1,16 +1,14 @@
 import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { Compass, Map, Bookmark, User } from 'lucide-react-native';
+import { Compass, Map, User } from 'lucide-react-native';
 import ExploreStack from './ExploreStack';
 import MapStack from './MapStack';
-import SavedStack from './SavedStack';
 import ProfileStack from './ProfileStack';
 import { colors } from '../styles/theme';
 
 export type TabsParamList = {
   ExploreTab: undefined;
   MapTab: undefined;
-  SavedTab: undefined;
   ProfileTab: undefined;
 };
 
@@ -50,14 +48,6 @@ export default function TabsNavigator() {
         options={{
           tabBarLabel: 'Map',
           tabBarIcon: ({ color, size }) => <Map color={color} size={size} />,
-        }}
-      />
-      <Tab.Screen
-        name="SavedTab"
-        component={SavedStack}
-        options={{
-          tabBarLabel: 'Saved',
-          tabBarIcon: ({ color, size }) => <Bookmark color={color} size={size} />,
         }}
       />
       <Tab.Screen

@@ -5,7 +5,11 @@
       "Bash(npm install:*)",
       "Bash(npx expo install:*)",
       "Bash(npm uninstall:*)",
-      "Bash(npm run ios:*)"
+      "Bash(npm run ios:*)",
+      "mcp__ide__getDiagnostics",
+      "Bash(xcrun simctl:*)",
+      "Bash(pgrep:*)",
+      "Bash(pkill:*)"
     ]
   }
 }

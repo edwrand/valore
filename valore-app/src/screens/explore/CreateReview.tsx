@@ -20,6 +20,7 @@ import TagPill from '../../components/TagPill';
 import PrimaryButton from '../../components/PrimaryButton';
 import { useHotel } from '../../hooks/useHotels';
 import { useCreateReview } from '../../hooks/useReviews';
+import { useResponsiveSpacing } from '../../hooks/useResponsiveSpacing';
 import type { ExploreStackParamList } from '../../navigation/ExploreStack';
 import type { TripType } from '../../types/db';
 
@@ -42,6 +43,7 @@ export default function CreateReviewScreen({ navigation, route }: Props) {
   const { hotelId } = route.params;
   const { data: hotel } = useHotel(hotelId);
   const createReview = useCreateReview();
+  const { screenPadding } = useResponsiveSpacing();
 
   const [ratingOverall, setRatingOverall] = useState(0);
   const [ratingAesthetic, setRatingAesthetic] = useState(0);
@@ -84,7 +86,7 @@ export default function CreateReviewScreen({ navigation, route }: Props) {
         style={styles.keyboardView}
       >
         {/* Header */}
-        <View style={styles.header}>
+        <View style={[styles.header, { paddingHorizontal: screenPadding }]}>
           <TouchableOpacity onPress={() => navigation.goBack()}>
             <ChevronLeft size={24} color={colors.textPrimary} />
           </TouchableOpacity>
@@ -94,7 +96,7 @@ export default function CreateReviewScreen({ navigation, route }: Props) {
 
         <ScrollView
           style={styles.scrollView}
-          contentContainerStyle={styles.content}
+          contentContainerStyle={[styles.content, { paddingHorizontal: screenPadding }]}
           showsVerticalScrollIndicator={false}
         >
           {/* Hotel name */}
@@ -216,7 +218,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: spacing.md,
     paddingVertical: spacing.md,
     borderBottomWidth: 1,
     borderBottomColor: colors.borderLight,
@@ -230,7 +231,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   content: {
-    padding: spacing.md,
+    paddingVertical: spacing.md,
     paddingBottom: spacing.xxl,
   },
   hotelName: {

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -6,18 +6,23 @@ import {
   StyleSheet,
   TouchableOpacity,
   RefreshControl,
+  TextInput,
+  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { Settings, Edit3, BookOpen, MapPin } from 'lucide-react-native';
-import { colors, spacing, fontSize, fontWeight, borderRadius } from '../../styles/theme';
+import { Settings, MapPin, Plus, Bookmark, ChevronRight } from 'lucide-react-native';
+import { colors, spacing, fontSize, fontWeight, borderRadius, shadows } from '../../styles/theme';
 import Avatar from '../../components/Avatar';
 import PrimaryButton from '../../components/PrimaryButton';
+import SegmentedControl from '../../components/SegmentedControl';
 import { useAuth } from '../../hooks/useLocalAuth';
 import { useMyReviews } from '../../hooks/useReviews';
-import { useUserLists } from '../../hooks/useSaveHotel';
+import { useUserLists, useCreateList } from '../../hooks/useSaveHotel';
+import { useResponsiveSpacing } from '../../hooks/useResponsiveSpacing';
 import { formatCompactNumber } from '../../lib/formatters';
 import type { ProfileStackParamList } from '../../navigation/ProfileStack';
+import type { ListWithCount } from '../../types/models';
 
 type Props = {
   navigation: NativeStackNavigationProp<ProfileStackParamList, 'MyProfile'>;
@@ -26,18 +31,140 @@ type Props = {
 export default function MyProfileScreen({ navigation }: Props) {
   const { profile, refreshProfile } = useAuth();
   const { data: reviews, refetch: refetchReviews } = useMyReviews();
-  const { data: lists } = useUserLists();
+  const { data: lists, refetch: refetchLists } = useUserLists();
+  const { screenPadding } = useResponsiveSpacing();
+  const createList = useCreateList();
+
+  const [activeTab, setActiveTab] = useState(0);
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [newListName, setNewListName] = useState('');
 
   const totalSaved = lists?.reduce((sum, list) => sum + (list.hotel_count || 0), 0) || 0;
 
   const handleRefresh = async () => {
-    await Promise.all([refreshProfile(), refetchReviews()]);
+    await Promise.all([refreshProfile(), refetchReviews(), refetchLists()]);
   };
+
+  const handleCreateList = async () => {
+    if (!newListName.trim()) {
+      Alert.alert('Error', 'Please enter a list name');
+      return;
+    }
+
+    try {
+      await createList.mutateAsync(newListName.trim());
+      setNewListName('');
+      setShowCreateModal(false);
+    } catch (error: any) {
+      Alert.alert('Error', error.message || 'Failed to create list');
+    }
+  };
+
+  const renderReviewsTab = () => (
+    <View style={styles.tabContent}>
+      {reviews && reviews.length > 0 ? (
+        <>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>Recent Reviews</Text>
+            <TouchableOpacity onPress={() => navigation.navigate('MyReviews')}>
+              <Text style={styles.seeAll}>See All</Text>
+            </TouchableOpacity>
+          </View>
+          {reviews.slice(0, 5).map((review) => (
+            <TouchableOpacity
+              key={review.id}
+              style={styles.reviewPreview}
+              onPress={() =>
+                navigation.navigate('HotelDetail', { hotelId: review.hotel_id })
+              }
+            >
+              <View style={styles.reviewMeta}>
+                <Text style={styles.reviewHotel} numberOfLines={1}>
+                  {review.hotel.name}
+                </Text>
+                <View style={styles.reviewRating}>
+                  {Array.from({ length: 5 }).map((_, i) => (
+                    <Text
+                      key={i}
+                      style={[
+                        styles.star,
+                        i < review.rating_overall && styles.starFilled,
+                      ]}
+                    >
+                      ★
+                    </Text>
+                  ))}
+                </View>
+              </View>
+              {review.title && (
+                <Text style={styles.reviewTitle} numberOfLines={1}>
+                  {review.title}
+                </Text>
+              )}
+            </TouchableOpacity>
+          ))}
+        </>
+      ) : (
+        <View style={styles.emptyTab}>
+          <Text style={styles.emptyTitle}>No reviews yet</Text>
+          <Text style={styles.emptyText}>
+            Start exploring hotels and share your experiences
+          </Text>
+        </View>
+      )}
+    </View>
+  );
+
+  const renderSavedTab = () => (
+    <View style={styles.tabContent}>
+      <View style={styles.sectionHeader}>
+        <Text style={styles.sectionTitle}>My Lists</Text>
+        <TouchableOpacity onPress={() => setShowCreateModal(true)}>
+          <Plus size={20} color={colors.primary} />
+        </TouchableOpacity>
+      </View>
+      {lists && lists.length > 0 ? (
+        lists.map((list: ListWithCount) => (
+          <TouchableOpacity
+            key={list.id}
+            style={styles.listCard}
+            onPress={() => navigation.navigate('ListDetail', { listId: list.id })}
+            activeOpacity={0.8}
+          >
+            <View style={styles.listIcon}>
+              <Bookmark size={20} color={colors.primary} fill={colors.primaryLight} />
+            </View>
+            <View style={styles.listInfo}>
+              <Text style={styles.listName}>{list.name}</Text>
+              <Text style={styles.listCount}>
+                {list.hotel_count} {list.hotel_count === 1 ? 'hotel' : 'hotels'}
+              </Text>
+            </View>
+            <ChevronRight size={20} color={colors.textTertiary} />
+          </TouchableOpacity>
+        ))
+      ) : (
+        <View style={styles.emptyTab}>
+          <Bookmark size={40} color={colors.textTertiary} />
+          <Text style={styles.emptyTitle}>No saved lists yet</Text>
+          <Text style={styles.emptyText}>
+            Create a list to start saving your favorite hotels
+          </Text>
+          <PrimaryButton
+            title="Create List"
+            onPress={() => setShowCreateModal(true)}
+            size="sm"
+            style={styles.createButton}
+          />
+        </View>
+      )}
+    </View>
+  );
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       {/* Header */}
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingHorizontal: screenPadding }]}>
         <Text style={styles.title}>Profile</Text>
         <TouchableOpacity onPress={() => navigation.navigate('Settings')}>
           <Settings size={24} color={colors.textPrimary} />
@@ -46,7 +173,7 @@ export default function MyProfileScreen({ navigation }: Props) {
 
       <ScrollView
         style={styles.scrollView}
-        contentContainerStyle={styles.content}
+        contentContainerStyle={[styles.content, { paddingHorizontal: screenPadding }]}
         showsVerticalScrollIndicator={false}
         refreshControl={
           <RefreshControl
@@ -99,78 +226,79 @@ export default function MyProfileScreen({ navigation }: Props) {
             <Text style={styles.statLabel}>Reviews</Text>
           </TouchableOpacity>
           <View style={styles.statDivider} />
-          <View style={styles.statItem}>
+          <TouchableOpacity
+            style={styles.statItem}
+            onPress={() => profile?.id && navigation.navigate('FollowersList', { userId: profile.id })}
+          >
+            <Text style={styles.statValue}>0</Text>
+            <Text style={styles.statLabel}>Followers</Text>
+          </TouchableOpacity>
+          <View style={styles.statDivider} />
+          <TouchableOpacity
+            style={styles.statItem}
+            onPress={() => profile?.id && navigation.navigate('FollowingList', { userId: profile.id })}
+          >
+            <Text style={styles.statValue}>0</Text>
+            <Text style={styles.statLabel}>Following</Text>
+          </TouchableOpacity>
+          <View style={styles.statDivider} />
+          <TouchableOpacity
+            style={styles.statItem}
+            onPress={() => setActiveTab(1)}
+          >
             <Text style={styles.statValue}>
               {formatCompactNumber(totalSaved)}
             </Text>
             <Text style={styles.statLabel}>Saved</Text>
-          </View>
-          <View style={styles.statDivider} />
-          <View style={styles.statItem}>
-            <Text style={styles.statValue}>
-              {formatCompactNumber(lists?.length || 0)}
-            </Text>
-            <Text style={styles.statLabel}>Lists</Text>
-          </View>
-        </View>
-
-        {/* Quick actions */}
-        <View style={styles.actions}>
-          <TouchableOpacity
-            style={styles.actionCard}
-            onPress={() => navigation.navigate('MyReviews')}
-          >
-            <BookOpen size={24} color={colors.primary} />
-            <Text style={styles.actionTitle}>My Reviews</Text>
-            <Text style={styles.actionCount}>{reviews?.length || 0}</Text>
           </TouchableOpacity>
         </View>
 
-        {/* Recent reviews preview */}
-        {reviews && reviews.length > 0 && (
-          <View style={styles.section}>
-            <View style={styles.sectionHeader}>
-              <Text style={styles.sectionTitle}>Recent Reviews</Text>
-              <TouchableOpacity onPress={() => navigation.navigate('MyReviews')}>
-                <Text style={styles.seeAll}>See All</Text>
-              </TouchableOpacity>
-            </View>
-            {reviews.slice(0, 3).map((review) => (
-              <TouchableOpacity
-                key={review.id}
-                style={styles.reviewPreview}
-                onPress={() =>
-                  navigation.navigate('HotelDetail', { hotelId: review.hotel_id })
-                }
-              >
-                <View style={styles.reviewMeta}>
-                  <Text style={styles.reviewHotel} numberOfLines={1}>
-                    {review.hotel.name}
-                  </Text>
-                  <View style={styles.reviewRating}>
-                    {Array.from({ length: 5 }).map((_, i) => (
-                      <Text
-                        key={i}
-                        style={[
-                          styles.star,
-                          i < review.rating_overall && styles.starFilled,
-                        ]}
-                      >
-                        ★
-                      </Text>
-                    ))}
-                  </View>
-                </View>
-                {review.title && (
-                  <Text style={styles.reviewTitle} numberOfLines={1}>
-                    {review.title}
-                  </Text>
-                )}
-              </TouchableOpacity>
-            ))}
-          </View>
-        )}
+        {/* Segmented Control */}
+        <View style={styles.segmentedWrapper}>
+          <SegmentedControl
+            tabs={['Reviews', 'Saved']}
+            selectedIndex={activeTab}
+            onTabChange={setActiveTab}
+          />
+        </View>
+
+        {/* Tab Content */}
+        {activeTab === 0 ? renderReviewsTab() : renderSavedTab()}
       </ScrollView>
+
+      {/* Create list modal */}
+      {showCreateModal && (
+        <View style={styles.modalOverlay}>
+          <View style={styles.modal}>
+            <Text style={styles.modalTitle}>Create New List</Text>
+            <TextInput
+              style={styles.modalInput}
+              value={newListName}
+              onChangeText={setNewListName}
+              placeholder="List name (e.g., Honeymoon 2026)"
+              placeholderTextColor={colors.textTertiary}
+              autoFocus
+            />
+            <View style={styles.modalActions}>
+              <PrimaryButton
+                title="Cancel"
+                onPress={() => {
+                  setShowCreateModal(false);
+                  setNewListName('');
+                }}
+                variant="ghost"
+                size="sm"
+              />
+              <PrimaryButton
+                title="Create"
+                onPress={handleCreateList}
+                loading={createList.isPending}
+                size="sm"
+              />
+            </View>
+          </View>
+        </View>
+      )}
     </SafeAreaView>
   );
 }
@@ -184,7 +312,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: spacing.md,
     paddingVertical: spacing.md,
     borderBottomWidth: 1,
     borderBottomColor: colors.borderLight,
@@ -198,7 +325,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   content: {
-    padding: spacing.md,
+    paddingVertical: spacing.md,
     paddingBottom: spacing.xxl,
   },
   profileCard: {
@@ -249,12 +376,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   statValue: {
-    fontSize: fontSize.xl,
+    fontSize: fontSize.lg,
     fontWeight: fontWeight.bold,
     color: colors.textPrimary,
   },
   statLabel: {
-    fontSize: fontSize.sm,
+    fontSize: fontSize.xs,
     color: colors.textSecondary,
     marginTop: spacing.xs,
   },
@@ -262,29 +389,11 @@ const styles = StyleSheet.create({
     width: 1,
     backgroundColor: colors.border,
   },
-  actions: {
+  segmentedWrapper: {
     marginTop: spacing.lg,
   },
-  actionCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: colors.backgroundSecondary,
-    borderRadius: borderRadius.md,
-    padding: spacing.md,
-    gap: spacing.md,
-  },
-  actionTitle: {
-    flex: 1,
-    fontSize: fontSize.base,
-    fontWeight: fontWeight.medium,
-    color: colors.textPrimary,
-  },
-  actionCount: {
-    fontSize: fontSize.sm,
-    color: colors.textSecondary,
-  },
-  section: {
-    marginTop: spacing.xl,
+  tabContent: {
+    marginTop: spacing.md,
   },
   sectionHeader: {
     flexDirection: 'row',
@@ -334,5 +443,92 @@ const styles = StyleSheet.create({
     fontSize: fontSize.sm,
     color: colors.textSecondary,
     marginTop: spacing.xs,
+  },
+  listCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.backgroundSecondary,
+    borderRadius: borderRadius.md,
+    padding: spacing.md,
+    marginBottom: spacing.sm,
+  },
+  listIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: borderRadius.sm,
+    backgroundColor: colors.primaryLight + '20',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: spacing.md,
+  },
+  listInfo: {
+    flex: 1,
+  },
+  listName: {
+    fontSize: fontSize.base,
+    fontWeight: fontWeight.semibold,
+    color: colors.textPrimary,
+  },
+  listCount: {
+    fontSize: fontSize.sm,
+    color: colors.textSecondary,
+    marginTop: spacing.xs,
+  },
+  emptyTab: {
+    alignItems: 'center',
+    paddingVertical: spacing.xl,
+  },
+  emptyTitle: {
+    fontSize: fontSize.lg,
+    fontWeight: fontWeight.semibold,
+    color: colors.textPrimary,
+    marginTop: spacing.md,
+    marginBottom: spacing.xs,
+  },
+  emptyText: {
+    fontSize: fontSize.base,
+    color: colors.textSecondary,
+    textAlign: 'center',
+  },
+  createButton: {
+    marginTop: spacing.md,
+  },
+  modalOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: colors.overlay,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: spacing.lg,
+  },
+  modal: {
+    backgroundColor: colors.background,
+    borderRadius: borderRadius.lg,
+    padding: spacing.lg,
+    width: '100%',
+    maxWidth: 400,
+  },
+  modalTitle: {
+    fontSize: fontSize.lg,
+    fontWeight: fontWeight.semibold,
+    color: colors.textPrimary,
+    marginBottom: spacing.md,
+  },
+  modalInput: {
+    backgroundColor: colors.backgroundTertiary,
+    borderRadius: borderRadius.md,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.md,
+    fontSize: fontSize.base,
+    color: colors.textPrimary,
+    marginBottom: spacing.md,
+  },
+  modalActions: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    gap: spacing.sm,
   },
 });

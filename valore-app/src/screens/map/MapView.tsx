@@ -15,6 +15,7 @@ import SearchBar from '../../components/SearchBar';
 import HotelCard from '../../components/HotelCard';
 import { useHotels } from '../../hooks/useHotels';
 import { useToggleSave } from '../../hooks/useSaveHotel';
+import { useResponsiveSpacing } from '../../hooks/useResponsiveSpacing';
 import type { MapStackParamList } from '../../navigation/MapStack';
 import type { HotelWithDetails } from '../../types/models';
 
@@ -24,6 +25,7 @@ type Props = {
 
 export default function MapViewScreen({ navigation }: Props) {
   const [searchQuery, setSearchQuery] = useState('');
+  const { screenPadding } = useResponsiveSpacing();
 
   const { data: hotels, isLoading, refetch, isRefetching } = useHotels({
     query: searchQuery || undefined,
@@ -43,7 +45,7 @@ export default function MapViewScreen({ navigation }: Props) {
   const hotelsWithCoords = hotels?.filter((h) => h.lat !== null && h.lng !== null) || [];
 
   const renderItem = ({ item }: { item: HotelWithDetails }) => (
-    <View style={styles.cardWrapper}>
+    <View style={[styles.cardWrapper, { paddingHorizontal: screenPadding }]}>
       <HotelCard
         hotel={item}
         onPress={() => handleHotelPress(item.id)}
@@ -65,12 +67,12 @@ export default function MapViewScreen({ navigation }: Props) {
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       {/* Header */}
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingHorizontal: screenPadding }]}>
         <Text style={styles.title}>Map</Text>
       </View>
 
       {/* Map placeholder banner */}
-      <View style={styles.mapPlaceholder}>
+      <View style={[styles.mapPlaceholder, { paddingHorizontal: screenPadding }]}>
         <MapIcon size={32} color={colors.textTertiary} />
         <Text style={styles.placeholderTitle}>Map View Coming Soon</Text>
         <Text style={styles.placeholderText}>
@@ -80,7 +82,7 @@ export default function MapViewScreen({ navigation }: Props) {
       </View>
 
       {/* Search bar */}
-      <View style={styles.searchContainer}>
+      <View style={[styles.searchContainer, { paddingHorizontal: screenPadding }]}>
         <SearchBar
           value={searchQuery}
           onChangeText={setSearchQuery}
@@ -128,7 +130,6 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background,
   },
   header: {
-    paddingHorizontal: spacing.md,
     paddingVertical: spacing.md,
     borderBottomWidth: 1,
     borderBottomColor: colors.borderLight,
@@ -141,7 +142,6 @@ const styles = StyleSheet.create({
   mapPlaceholder: {
     backgroundColor: colors.backgroundSecondary,
     paddingVertical: spacing.xl,
-    paddingHorizontal: spacing.lg,
     alignItems: 'center',
     borderBottomWidth: 1,
     borderBottomColor: colors.border,
@@ -160,14 +160,12 @@ const styles = StyleSheet.create({
     lineHeight: 20,
   },
   searchContainer: {
-    paddingHorizontal: spacing.md,
     paddingVertical: spacing.md,
   },
   list: {
     paddingBottom: spacing.xl + 40,
   },
   cardWrapper: {
-    paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
   },
   loading: {

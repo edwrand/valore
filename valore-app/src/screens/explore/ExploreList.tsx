@@ -3,6 +3,7 @@ import {
   View,
   Text,
   FlatList,
+  ScrollView,
   StyleSheet,
   RefreshControl,
   ActivityIndicator,
@@ -14,7 +15,8 @@ import SearchBar from '../../components/SearchBar';
 import HotelCard from '../../components/HotelCard';
 import TagPill from '../../components/TagPill';
 import { useHotels, useTags } from '../../hooks/useHotels';
-import { useToggleSave, useIsHotelSaved } from '../../hooks/useSaveHotel';
+import { useToggleSave } from '../../hooks/useSaveHotel';
+import { useResponsiveSpacing } from '../../hooks/useResponsiveSpacing';
 import type { ExploreStackParamList } from '../../navigation/ExploreStack';
 import type { HotelWithDetails } from '../../types/models';
 
@@ -25,6 +27,7 @@ type Props = {
 export default function ExploreListScreen({ navigation }: Props) {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
+  const { screenPadding } = useResponsiveSpacing();
 
   const { data: hotels, isLoading, refetch, isRefetching } = useHotels({
     query: searchQuery || undefined,
@@ -51,7 +54,7 @@ export default function ExploreListScreen({ navigation }: Props) {
   };
 
   const renderHeader = () => (
-    <View style={styles.headerContent}>
+    <View style={[styles.headerContent, { paddingHorizontal: screenPadding }]}>
       <SearchBar
         value={searchQuery}
         onChangeText={setSearchQuery}
@@ -60,27 +63,27 @@ export default function ExploreListScreen({ navigation }: Props) {
 
       {/* Tags filter */}
       {tags && tags.length > 0 && (
-        <FlatList
+        <ScrollView
           horizontal
-          data={tags}
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={styles.tagsContainer}
-          renderItem={({ item }) => (
+        >
+          {tags.map((tag) => (
             <TagPill
-              label={item.name}
-              selected={selectedTags.includes(item.id)}
-              onPress={() => toggleTag(item.id)}
+              key={tag.id}
+              label={tag.name}
+              selected={selectedTags.includes(tag.id)}
+              onPress={() => toggleTag(tag.id)}
               variant="outline"
             />
-          )}
-          keyExtractor={(item) => item.id}
-        />
+          ))}
+        </ScrollView>
       )}
     </View>
   );
 
   const renderItem = ({ item }: { item: HotelWithDetails }) => (
-    <View style={styles.cardWrapper}>
+    <View style={[styles.cardWrapper, { paddingHorizontal: screenPadding }]}>
       <HotelCard
         hotel={item}
         onPress={() => handleHotelPress(item.id)}
@@ -102,7 +105,7 @@ export default function ExploreListScreen({ navigation }: Props) {
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingHorizontal: screenPadding }]}>
         <Text style={styles.title}>Explore</Text>
       </View>
 
@@ -139,7 +142,6 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background,
   },
   header: {
-    paddingHorizontal: spacing.md,
     paddingVertical: spacing.md,
     borderBottomWidth: 1,
     borderBottomColor: colors.borderLight,
@@ -150,7 +152,6 @@ const styles = StyleSheet.create({
     color: colors.textPrimary,
   },
   headerContent: {
-    paddingHorizontal: spacing.md,
     paddingTop: spacing.md,
     paddingBottom: spacing.sm,
     gap: spacing.md,
@@ -162,7 +163,6 @@ const styles = StyleSheet.create({
     paddingBottom: spacing.xl,
   },
   cardWrapper: {
-    paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
   },
   loading: {

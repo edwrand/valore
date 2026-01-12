@@ -13,6 +13,7 @@ import { ChevronLeft, BookOpen, Star } from 'lucide-react-native';
 import { colors, spacing, fontSize, fontWeight, borderRadius, shadows } from '../../styles/theme';
 import RatingStars from '../../components/RatingStars';
 import { useMyReviews } from '../../hooks/useReviews';
+import { useResponsiveSpacing } from '../../hooks/useResponsiveSpacing';
 import { formatRelativeTime, formatLocation, formatTripType } from '../../lib/formatters';
 import type { ProfileStackParamList } from '../../navigation/ProfileStack';
 import type { ReviewWithDetails } from '../../types/models';
@@ -23,6 +24,7 @@ type Props = {
 
 export default function MyReviewsScreen({ navigation }: Props) {
   const { data: reviews, isLoading } = useMyReviews();
+  const { screenPadding } = useResponsiveSpacing();
 
   const handleReviewPress = (hotelId: string) => {
     navigation.navigate('HotelDetail', { hotelId });
@@ -116,7 +118,7 @@ export default function MyReviewsScreen({ navigation }: Props) {
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       {/* Header */}
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingHorizontal: screenPadding }]}>
         <TouchableOpacity onPress={() => navigation.goBack()}>
           <ChevronLeft size={24} color={colors.textPrimary} />
         </TouchableOpacity>
@@ -128,7 +130,7 @@ export default function MyReviewsScreen({ navigation }: Props) {
         data={reviews}
         renderItem={renderItem}
         keyExtractor={(item) => item.id}
-        contentContainerStyle={styles.list}
+        contentContainerStyle={[styles.list, { paddingHorizontal: screenPadding }]}
         ListEmptyComponent={renderEmpty}
         showsVerticalScrollIndicator={false}
       />
@@ -150,7 +152,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: spacing.md,
     paddingVertical: spacing.md,
     borderBottomWidth: 1,
     borderBottomColor: colors.borderLight,
@@ -161,7 +162,7 @@ const styles = StyleSheet.create({
     color: colors.textPrimary,
   },
   list: {
-    padding: spacing.md,
+    paddingVertical: spacing.md,
     paddingBottom: spacing.xxl,
   },
   reviewCard: {

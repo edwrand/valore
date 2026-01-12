@@ -15,16 +15,18 @@ import { Plus, Bookmark, ChevronRight } from 'lucide-react-native';
 import { colors, spacing, fontSize, fontWeight, borderRadius, shadows } from '../../styles/theme';
 import PrimaryButton from '../../components/PrimaryButton';
 import { useUserLists, useCreateList } from '../../hooks/useSaveHotel';
-import type { SavedStackParamList } from '../../navigation/SavedStack';
+import { useResponsiveSpacing } from '../../hooks/useResponsiveSpacing';
+import type { ProfileStackParamList } from '../../navigation/ProfileStack';
 import type { ListWithCount } from '../../types/models';
 
 type Props = {
-  navigation: NativeStackNavigationProp<SavedStackParamList, 'SavedLists'>;
+  navigation: NativeStackNavigationProp<ProfileStackParamList, 'SavedLists'>;
 };
 
 export default function SavedListsScreen({ navigation }: Props) {
   const { data: lists, isLoading, refetch, isRefetching } = useUserLists();
   const createList = useCreateList();
+  const { screenPadding } = useResponsiveSpacing();
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [newListName, setNewListName] = useState('');
 
@@ -79,7 +81,7 @@ export default function SavedListsScreen({ navigation }: Props) {
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       {/* Header */}
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingHorizontal: screenPadding }]}>
         <Text style={styles.title}>Saved</Text>
         <TouchableOpacity
           style={styles.addButton}
@@ -94,7 +96,7 @@ export default function SavedListsScreen({ navigation }: Props) {
         data={lists}
         renderItem={renderItem}
         keyExtractor={(item) => item.id}
-        contentContainerStyle={styles.list}
+        contentContainerStyle={[styles.list, { paddingHorizontal: screenPadding }]}
         ListEmptyComponent={!isLoading ? renderEmpty : null}
         showsVerticalScrollIndicator={false}
         refreshControl={
@@ -153,7 +155,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: spacing.md,
     paddingVertical: spacing.md,
     borderBottomWidth: 1,
     borderBottomColor: colors.borderLight,
@@ -167,7 +168,7 @@ const styles = StyleSheet.create({
     padding: spacing.sm,
   },
   list: {
-    padding: spacing.md,
+    paddingVertical: spacing.md,
   },
   listCard: {
     flexDirection: 'row',

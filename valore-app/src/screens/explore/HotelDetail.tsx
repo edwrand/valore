@@ -28,6 +28,7 @@ import Avatar from '../../components/Avatar';
 import PrimaryButton from '../../components/PrimaryButton';
 import { useHotel, useHotelReviews } from '../../hooks/useHotels';
 import { useToggleSave, useIsHotelSaved } from '../../hooks/useSaveHotel';
+import { useResponsiveSpacing } from '../../hooks/useResponsiveSpacing';
 import { formatLocation, formatRelativeTime, formatRating } from '../../lib/formatters';
 import type { ExploreStackParamList } from '../../navigation/ExploreStack';
 
@@ -42,6 +43,7 @@ export default function HotelDetailScreen({ navigation, route }: Props) {
   const { data: reviews, isLoading: reviewsLoading } = useHotelReviews(hotelId);
   const { data: isSaved } = useIsHotelSaved(hotelId);
   const toggleSave = useToggleSave();
+  const { screenPadding } = useResponsiveSpacing();
 
   if (hotelLoading || !hotel) {
     return (
@@ -87,7 +89,7 @@ export default function HotelDetailScreen({ navigation, route }: Props) {
         <PhotoCarousel photos={photos} height={300} borderRadius={0} />
 
         {/* Content */}
-        <View style={styles.content}>
+        <View style={[styles.content, { paddingHorizontal: screenPadding }]}>
           {/* Name and rating */}
           <View style={styles.titleRow}>
             <Text style={styles.name}>{hotel.name}</Text>
@@ -238,7 +240,7 @@ const styles = StyleSheet.create({
     padding: spacing.sm,
   },
   content: {
-    padding: spacing.md,
+    paddingVertical: spacing.md,
   },
   titleRow: {
     flexDirection: 'row',

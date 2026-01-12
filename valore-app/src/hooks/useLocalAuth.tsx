@@ -61,10 +61,12 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   // Initialize auth state
   useEffect(() => {
+    let isMounted = true;
+
     const initAuth = async () => {
       try {
         const storedUserId = await AsyncStorage.getItem(AUTH_KEY);
-        if (storedUserId) {
+        if (storedUserId && isMounted) {
           const userData = JSON.parse(storedUserId);
           setUser(userData);
           await loadProfile(userData.id);
@@ -72,11 +74,17 @@ export function AuthProvider({ children }: AuthProviderProps) {
       } catch (error) {
         console.error('Error initializing auth:', error);
       } finally {
-        setLoading(false);
+        if (isMounted) {
+          setLoading(false);
+        }
       }
     };
 
     initAuth();
+
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   // Sign up
